@@ -1,0 +1,92 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  user_id       Int                @id @default(autoincrement())
+  name          String
+  email         String              @unique
+  password      String
+  role          Role
+  created_at    DateTime            @default(now())
+  
+  assignments    CourseAssignment[]  @relation("UserAssignments") // Relationship to CourseAssignments
+  enrollments    CourseEnrollment[]   // Relationship to CourseEnrollments
+  adminAssignments CourseAssignment[] @relation("AdminAssignments") // Relationship for admin assignments
+}
+
+model Course {
+  course_id      Int                @id @default(autoincrement())
+  title          String
+  description    String?
+  duration       Int
+  difficulty     Difficulty
+  total_modules  Int
+  
+  modules        Module[]            // Relationship to Modules
+  assignments    CourseAssignment[]   @relation("CourseAssignments") // Relationship to CourseAssignments
+  enrollments    CourseEnrollment[]   // Relationship to CourseEnrollments
+}
+
+model Module {
+  module_id    Int      @id @default(autoincrement())
+  course_id    Int
+  module_title String
+  module_number Int
+  duration     Int
+
+  course       Course    @relation(fields: [course_id], references: [course_id])
+}
+
+model CourseAssignment {
+  assignment_id Int       @id @default(autoincrement())
+  admin_id      Int
+  user_id       Int
+  course_id     Int
+  assigned_date  DateTime @default(now())
+
+  admin         User      @relation("AdminAssignments", fields: [admin_id], references: [user_id]) // Relationship to admin user
+  user          User      @relation("UserAssignments", fields: [user_id], references: [user_id]) // Relationship to employee user
+  course        Course    @relation("CourseAssignments", fields: [course_id], references: [course_id]) // Relationship to Course
+}
+
+model CourseEnrollment {
+  enrollment_id       Int      @id @default(autoincrement())
+  user_id             Int
+  course_id           Int
+  modules_completed    Int
+  completion_percentage Float
+  completion_status   CompletionStatus
+  completion_date     DateTime?
+  start_time          DateTime?
+  end_time            DateTime?
+  quiz_score          Float
+  time_spent          Int
+  completion_time     Int
+  performance_improvement Float
+
+  user       User      @relation(fields: [user_id], references: [user_id])
+  course     Course    @relation(fields: [course_id], references: [course_id])
+}
+
+enum Role {
+  admin
+  employee
+}
+
+enum Difficulty {
+  beginner
+  intermediate
+  advanced
+}
+
+enum CompletionStatus {
+  not_started
+  in_progress
+  completed
+}
